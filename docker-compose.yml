@@ -1,0 +1,51 @@
+# 3 services: db, interface web db, api
+services:
+
+
+# db : mariadb, options de base (pas securisé)
+## Persistance dans le dossier local 'mariadb'
+## Initialisation du schéma de la table et insert du jeu de données via le dossier 'dump'
+    mariadb:
+        image: mariadb:latest
+        container_name: mariadb
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: mydatabase
+            MYSQL_USER: maria
+            MYSQL_PASSWORD: maria
+        volumes:
+            - ./mariadb:/var/lib/mysql
+            - ./dump:/docker-entrypoint-initdb.d
+        networks:
+            default: null
+
+# interface web db, options de base, map du port host 5001 vers le 8080 d'adminer
+## Dépend de la db
+    adminer:
+        image: adminer
+        container_name: adminer
+        depends_on:
+            - mariadb
+        ports:
+            - 5001:8080
+        networks:
+            default: null
+
+# api, voir Dockerfile dans 'api', map du port host 5000 vers le 80 de l'api
+## Bind du dossier local 'api' vers le dossier '/usr/src/app' de la vm
+## Dépend de la db
+    api:
+        build: ./api/
+        volumes:
+            - ./api/:/usr/src/app/
+        depends_on:
+            - mariadb
+        ports:
+            - 5000:80
+        networks:
+            default: null
+
+# Tous les services sont sur ce network
+networks:
+  default:
+    name: projet_docker_default
